@@ -1,0 +1,41 @@
+# Replace a cluster-admin binding for an app with a namespaced, read-mostly role.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-runtime
+  namespace: apps
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-runtime
+  namespace: apps
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-runtime
+  namespace: apps
+subjects:
+  - kind: ServiceAccount
+    name: app-runtime
+    namespace: apps
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: app-runtime
+---
+# Read-only auditors across the cluster (no secrets).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: security-auditor
+rules:
+  - apiGroups: ["", apps, batch, networking.k8s.io, rbac.authorization.k8s.io]
+    resources: [pods, namespaces, deployments, daemonsets, jobs, cronjobs, networkpolicies, roles, rolebindings, clusterroles, clusterrolebindings, serviceaccounts]
+    verbs: [get, list, watch]
