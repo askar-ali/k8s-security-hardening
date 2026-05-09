@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-limits-and-trusted-registry
+spec:
+  validationFailureAction: Enforce
+  rules:
+    - name: require-limits
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [apps] }
+      validate:
+        message: "CPU and memory limits are required."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
+    - name: trusted-registry
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [apps] }
+      validate:
+        message: "Images must come from ghcr.io or registry.example.internal."
+        pattern:
+          spec:
+            containers:
+              - image: "ghcr.io/* | registry.example.internal/*"
