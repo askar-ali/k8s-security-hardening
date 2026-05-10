@@ -1,0 +1,57 @@
+# Nightly Trivy scan of images running in the apps namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trivy-scanner
+  namespace: security-scanning
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trivy-scanner-read-pods
+rules:
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trivy-scanner-read-pods
+subjects:
+  - kind: ServiceAccount
+    name: trivy-scanner
+    namespace: security-scanning
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: trivy-scanner-read-pods
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trivy-image-scan
+  namespace: security-scanning
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: trivy-scanner
+          restartPolicy: Never
+          containers:
+            - name: scan
+              image: aquasec/trivy:0.55.0
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  for img in $IMAGES; do
+                    trivy image --severity HIGH,CRITICAL --exit-code 0 --no-progress "$img"
+                  done
+              env:
+                - name: IMAGES
+                  value: "ghcr.io/stefanprodan/podinfo:6.7.0"   # fed by a generator in real use
+              resources:
+                limits: { cpu: "1", memory: 1Gi }

@@ -1,0 +1,27 @@
+# Weekly ClamAV scan of a shared data volume (mount your PVC).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clamav-scan
+  namespace: security-scanning
+spec:
+  schedule: "0 3 * * 0"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: clamscan
+              image: clamav/clamav:1.4
+              command: ["/bin/sh", "-c"]
+              args:
+                - freshclam && clamscan -r -i --exit-on-error=no /scan
+              volumeMounts:
+                - { name: data, mountPath: /scan, readOnly: true }
+              resources:
+                limits: { cpu: "1", memory: 2Gi }
+          volumes:
+            - name: data
+              emptyDir: {}   # replace with persistentVolumeClaim for real data
