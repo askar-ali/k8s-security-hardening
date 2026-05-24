@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-drop-all-and-readonly-rootfs
+spec:
+  validationFailureAction: Audit   # start in Audit; switch to Enforce after review
+  background: true
+  rules:
+    - name: drop-all-capabilities
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [apps] }
+      validate:
+        message: "Containers must drop ALL capabilities."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  capabilities:
+                    drop: ["ALL"]
+    - name: read-only-rootfs
+      match:
+        any:
+          - resources: { kinds: [Pod], namespaces: [apps] }
+      validate:
+        message: "Root filesystem should be read-only."
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true
