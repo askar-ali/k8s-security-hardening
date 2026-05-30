@@ -1,0 +1,13 @@
+# Should be rejected/flagged by every policy in policies/kyverno.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bad-pod
+  namespace: apps
+spec:
+  hostNetwork: true
+  containers:
+    - name: app
+      image: nginx:latest
+      securityContext:
+        privileged: true

@@ -1,0 +1,21 @@
+# Should pass all policies.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: good-pod
+  namespace: apps
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    seccompProfile: { type: RuntimeDefault }
+  containers:
+    - name: app
+      image: ghcr.io/stefanprodan/podinfo:6.7.0
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        capabilities: { drop: ["ALL"] }
+      resources:
+        limits: { cpu: 250m, memory: 128Mi }
