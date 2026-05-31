@@ -1,0 +1,25 @@
+# Run the CIS benchmark on a control-plane node. For RKE2 use the rke2-cis profile.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kube-bench
+  namespace: security-scanning
+spec:
+  template:
+    spec:
+      hostPID: true
+      restartPolicy: Never
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: "true"
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: kube-bench
+          image: aquasec/kube-bench:v0.8.0
+          command: ["kube-bench", "run", "--benchmark", "rke2-cis-1.24"]
+          volumeMounts:
+            - { name: var-lib-rancher, mountPath: /var/lib/rancher, readOnly: true }
+            - { name: etc-rancher, mountPath: /etc/rancher, readOnly: true }
+      volumes:
+        - { name: var-lib-rancher, hostPath: { path: /var/lib/rancher } }
+        - { name: etc-rancher, hostPath: { path: /etc/rancher } }
