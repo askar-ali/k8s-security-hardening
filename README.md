@@ -24,4 +24,6 @@ high-severity problems, then fix them with declarative manifests.
 kubectl apply -f namespaces/ -f rbac/ -f policies/kyverno/   # remediate
 kubectl apply -f scanning/                                    # continuous scans
 ```
+`make audit` runs all audits into `reports/`. `make test` checks policies with the Kyverno CLI.
+
 Audit scripts are read-only and need only `kubectl get` access.
